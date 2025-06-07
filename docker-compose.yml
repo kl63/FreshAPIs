@@ -3,8 +3,6 @@ version: '3.8'
 services:
   api:
     build: .
-    ports:
-      - "8000:8000"
     volumes:
       - .:/app
     depends_on:
@@ -15,6 +13,20 @@ services:
       - SECRET_KEY=your-secret-key-change-in-production
       - ENVIRONMENT=development
     restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.freshly-api-http.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.freshly-api-http.entrypoints=http
+      - traefik.http.routers.freshly-api-http.middlewares=https-redirect
+      - traefik.http.routers.freshly-api-https.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.freshly-api-https.entrypoints=https
+      - traefik.http.routers.freshly-api-https.tls=true
+      - traefik.http.routers.freshly-api-https.tls.certresolver=le
+      - traefik.http.routers.freshly-api-https.service=freshly-api-service
+      - traefik.http.services.freshly-api-service.loadbalancer.server.port=8000
+    networks:
+      - traefik-public
+      - default
 
   db:
     image: postgres:14
@@ -48,3 +60,8 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+
+networks:
+  traefik-public:
+    external: true
+  default:
