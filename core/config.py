@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Freshly Supermarket API"
     APP_VERSION: str = "1.0.0"
     APP_DESCRIPTION: str = "Your go-to grocery backend!"
+    DOMAIN: str = "localhost"
     
     # Testing
     TESTING: bool = False
@@ -23,6 +24,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "allow"
 
 # Create a global settings instance
 settings = Settings()

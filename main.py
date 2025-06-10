@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import inspect
 
+
 # Import database modules
 from database.database import engine, get_db, Base
 from core.config import settings as app_settings
@@ -66,5 +67,8 @@ async def root():
     return {
         "message": "Welcome to Freshly Supermarket API",
         "documentation": "/docs",
-        "version": settings.APP_VERSION
+        "version": app_settings.APP_VERSION
     }
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}

@@ -1,10 +1,15 @@
-version: '3.8'
+version: "3.8"
 
 services:
   api:
     build: .
+    container_name: freshly-api
+    restart: always
+    working_dir: /app
     volumes:
       - .:/app
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -12,13 +17,13 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/freshly_supermarket
       - SECRET_KEY=your-secret-key-change-in-production
       - ENVIRONMENT=development
-    restart: always
     labels:
       - traefik.enable=true
-      - traefik.http.routers.freshly-api-http.rule=Host(`${DOMAIN}`)
+      - "traefik.docker.network=traefik-public"
+      - traefik.http.routers.freshly-api-http.rule=Host(`freshlyapi.kevinlinportfolio.com`)
       - traefik.http.routers.freshly-api-http.entrypoints=http
       - traefik.http.routers.freshly-api-http.middlewares=https-redirect
-      - traefik.http.routers.freshly-api-https.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.freshly-api-https.rule=Host(`freshlyapi.kevinlinportfolio.com`)
       - traefik.http.routers.freshly-api-https.entrypoints=https
       - traefik.http.routers.freshly-api-https.tls=true
       - traefik.http.routers.freshly-api-https.tls.certresolver=le
@@ -30,9 +35,10 @@ services:
 
   db:
     image: postgres:14
+    container_name: freshly-db
+    restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -44,9 +50,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - default
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: freshly-pgadmin
+    restart: always
     ports:
       - "5050:80"
     environment:
@@ -56,6 +66,26 @@ services:
       - db
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - traefik-public
+      - default
+    labels:
+      - traefik.enable=true
+      - "traefik.docker.network=traefik-public"
+      - traefik.http.routers.pgadmin-http.rule=Host(`pgadmin.freshlyapi.kevinlinportfolio.com`)
+      - traefik.http.routers.pgadmin-http.entrypoints=http
+      - traefik.http.routers.pgadmin-http.middlewares=https-redirect
+      - traefik.http.routers.pgadmin-https.rule=Host(`pgadmin.freshlyapi.kevinlinportfolio.com`)
+      - traefik.http.routers.pgadmin-https.entrypoints=https
+      - traefik.http.routers.pgadmin-https.tls=true
+      - traefik.http.routers.pgadmin-https.tls.certresolver=le
+      - traefik.http.routers.pgadmin-https.service=pgadmin-service
+      - traefik.http.services.pgadmin-service.loadbalancer.server.port=80
+      - traefik.http.middlewares.pgadmin-auth.basicauth.users=admin:$$apr1$$byxbdi2b$$7TVE23kherHkJrbKnEzMm1
+
+
+
+      
 
 volumes:
   postgres_data:
